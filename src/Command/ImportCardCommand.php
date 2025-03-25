@@ -27,8 +27,7 @@ class ImportCardCommand extends Command
         private readonly EntityManagerInterface $entityManager,
         private readonly LoggerInterface        $logger,
         private array                           $csvHeader = []
-    )
-    {
+    ) {
         parent::__construct();
     }
 
@@ -57,8 +56,10 @@ class ImportCardCommand extends Command
         $progressIndicator->start('Importing cards...');
 
         while (($row = $this->readCSV($handle)) !== false) {
+            if ($i === 0) {
+                $this->logger->info('CSV header: ' . implode(', ', array_keys($row)));
+            }
             $i++;
-
             if (!in_array($row['uuid'], $uuidInDatabase)) {
                 $this->addCard($row);
             }
@@ -78,6 +79,7 @@ class ImportCardCommand extends Command
         // On récupère le temps actuel, et on calcule la différence avec le temps de départ
         $end = microtime(true);
         $timeElapsed = $end - $start;
+        $this->logger->info(sprintf('Imported %d cards in %.2f seconds', $i, $timeElapsed));
         $io->success(sprintf('Imported %d cards in %.2f seconds', $i, $timeElapsed));
         return Command::SUCCESS;
     }
@@ -106,6 +108,5 @@ class ImportCardCommand extends Command
         $card->setText($row['text']);
         $card->setType($row['type']);
         $this->entityManager->persist($card);
-
     }
 }
